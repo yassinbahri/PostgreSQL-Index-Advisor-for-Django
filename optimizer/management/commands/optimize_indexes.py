@@ -1,4 +1,4 @@
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 
 from optimizer.analyzer import extract_query_patterns, get_frequent_queries
 from optimizer.applier import create_index
@@ -10,7 +10,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
         self.stdout.write("Fetching slow queries...")
-        queries = get_frequent_queries()
+        queries = get_frequent_queries(limit=limit)
 
         self.stdout.write("Analyzing query patterns...")
         column_stats = extract_query_patterns(queries)
