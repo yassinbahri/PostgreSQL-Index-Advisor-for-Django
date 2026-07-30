@@ -10,7 +10,7 @@
 
 <p align="center">
   <a href="https://pypi.org/project/django-index-optimizer/"><img alt="PyPI version" src="https://img.shields.io/pypi/v/django-index-optimizer.svg"></a>
-  <a href="https://pypistats.org/packages/django-index-optimizer"><img alt="Monthly downloads" src="https://img.shields.io/pypi/dm/django-index-optimizer?color=44B78B"></a>
+  <a href="https://pypistats.org/packages/django-index-optimizer"><img alt="Monthly downloads" src="https://img.shields.io/pypi/dm/django-index-optimizer?color=44B78B&cacheSeconds=86400"></a>
   <a href="https://www.python.org/downloads/"><img alt="Python 3.10+" src="https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white"></a>
   <a href="https://www.djangoproject.com/"><img alt="Django 5.2–6.0" src="https://img.shields.io/badge/Django-5.2%E2%80%936.0-0C4B33?logo=django&logoColor=white"></a>
   <a href="LICENSE"><img alt="BSD 2-Clause license" src="https://img.shields.io/badge/License-BSD%202--Clause-35c978"></a>
@@ -111,7 +111,7 @@ It is documented for reproducibility, not recommended for production use.
 ## Download statistics
 
 <p>
-  <a href="https://pypistats.org/packages/django-index-optimizer"><img alt="django-index-optimizer monthly downloads" src="https://img.shields.io/pypi/dm/django-index-optimizer?style=for-the-badge&color=44B78B"></a>
+  <a href="https://pypistats.org/packages/django-index-optimizer"><img alt="django-index-optimizer monthly downloads" src="https://img.shields.io/pypi/dm/django-index-optimizer?style=for-the-badge&color=44B78B&cacheSeconds=86400"></a>
 </p>
 
 PyPI download counts include automated environments such as CI and are not a
