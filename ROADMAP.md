@@ -44,3 +44,15 @@ heuristics:
 
 These features should only be considered after the `0.2.0` correctness work is
 complete.
+
+## Contributor-sized tasks
+
+The following issues are intentionally small and do not overlap the core
+database-safety redesign:
+
+- [#1: Expand recommendation threshold tests](https://github.com/yassinbahri/django-index-optimizer/issues/1)
+- [#2: Add a `--limit` command option](https://github.com/yassinbahri/django-index-optimizer/issues/2)
+- [#3: Document `pg_stat_statements` troubleshooting](https://github.com/yassinbahri/django-index-optimizer/issues/3)
+
+Comment on an unassigned issue before starting. The maintainer will confirm the
+scope and assign it to avoid duplicate work.
