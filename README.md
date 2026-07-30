@@ -1,118 +1,105 @@
+# django-index-optimizer
 
-# 🔍 Django Index Optimizer
+[![PyPI](https://img.shields.io/pypi/v/django-index-optimizer?logo=pypi&logoColor=white)](https://pypi.org/project/django-index-optimizer/)
+[![Monthly downloads](https://img.shields.io/pypi/dm/django-index-optimizer?color=44B78B)](https://pypistats.org/packages/django-index-optimizer)
+[![Python](https://img.shields.io/pypi/pyversions/django-index-optimizer?logo=python&logoColor=white)](https://pypi.org/project/django-index-optimizer/)
+[![License](https://img.shields.io/github/license/yassinbahri/django-index-optimizer)](LICENSE)
+[![Status](https://img.shields.io/badge/status-alpha-D9A441)](ROADMAP.md)
 
-**Django Index Optimizer** is a plug-and-play Django management command that analyzes your PostgreSQL query statistics and recommends indexes based on actual query patterns. It's designed to help **beginners and early-stage developers** optimize their applications **before scaling**, with minimal setup.
+Analyze PostgreSQL query statistics and turn recurring query patterns into
+actionable index recommendations for Django applications.
 
----
+## Project status
 
-## 🚀 Features
+The source for the published `0.1.0` release has been recovered and preserved
+in this repository. That release is an early proof of concept and has known
+execution-path defects. **Do not run it against a production database.**
 
-- 📊 Analyzes `pg_stat_statements` to find slow or frequent queries.
-- 🧠 Extracts filter patterns (`WHERE`, `ORDER BY`, `GROUP BY`) to identify indexing opportunities.
-- 💡 Recommends relevant single-column indexes.
-- ⚙️ Optionally creates missing indexes automatically.
-- 🔁 Can be run regularly or manually via `manage.py`.
+Development is now focused on a safer `0.2.0` release that will be preview-only
+by default, support current PostgreSQL statistics columns, and include automated
+tests. See the [roadmap](ROADMAP.md) for the audited problems and planned scope.
 
----
+## Intended workflow
 
-## 📦 Installation
+`django-index-optimizer` is designed to:
 
-1. **Install the package:**
+1. read slow or frequently executed statements from `pg_stat_statements`;
+2. identify filter, ordering, grouping, and join columns;
+3. compare candidates with existing PostgreSQL indexes;
+4. explain each recommendation and generate reviewable SQL;
+5. apply an index only after the user explicitly opts in.
+
+Correctness and database safety take priority over automatically creating a
+large number of indexes.
+
+## Published alpha
+
+The historical alpha remains available for reproducibility:
 
 ```bash
-pip install django-index-optimizer
+pip install django-index-optimizer==0.1.0
 ```
 
-2. **Add it to your Django project:**
+Add the application to Django:
 
 ```python
-# settings.py
-
 INSTALLED_APPS = [
-    ...
+    # ...
     "optimizer",
 ]
 ```
 
-3. **Ensure PostgreSQL has `pg_stat_statements` enabled:**
-
-Add this to your `postgresql.conf` (or via cloud provider settings):
+PostgreSQL must load and enable `pg_stat_statements`:
 
 ```conf
 shared_preload_libraries = 'pg_stat_statements'
 ```
 
-Then restart PostgreSQL and run:
-
 ```sql
 CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
 ```
 
----
-
-## ⚡ Usage
-
-Once installed, you can run the management command to optimize your indexes:
+The documented management command is:
 
 ```bash
 python manage.py optimize_indexes
 ```
 
-This will:
+It is retained for historical reference while the `0.2.0` safety work is in
+progress. Use a disposable development database if you are investigating the
+current implementation.
 
-1. Fetch frequent or slow queries from `pg_stat_statements`.
-2. Analyze which columns are used most often in queries.
-3. Recommend indexes and attempt to create them (using `CREATE INDEX CONCURRENTLY`).
+## Download statistics
 
----
+PyPI Stats reported the following mirror-filtered activity on 2026-07-30:
 
-## 📁 Project Structure
+| Period | Downloads |
+| --- | ---: |
+| Last day | 0 |
+| Last week | 8 |
+| Last month | 31 |
 
-```
-optimizer/
-├── __init__.py
-├── analyzer.py         # Fetches and parses query stats
-├── recommender.py      # Suggests columns to index
-├── applier.py          # Applies indexes if needed
-└── management/
-    └── commands/
-        └── optimize_indexes.py   # Main management command file
-```
+[View the current statistics on PyPI Stats](https://pypistats.org/packages/django-index-optimizer).
+Download counts include automated environments such as CI and should not be
+interpreted as a count of unique users.
 
----
+## Contributing
 
-## 🤝 Contributing
+New contributors are welcome. Start with an unassigned issue labeled
+[`good first issue`](https://github.com/yassinbahri/django-index-optimizer/issues?q=is%3Aissue%20state%3Aopen%20label%3A%22good%20first%20issue%22),
+leave a comment describing your approach, and wait for confirmation before
+doing substantial work.
 
-Contributions are welcome and **encouraged** — especially from beginners!
+The complete fork, environment, test, and pull-request workflow is in
+[CONTRIBUTING.md](CONTRIBUTING.md). Beginner issues do not require a local
+PostgreSQL server unless the issue says otherwise.
 
-Whether it's:
-- Improving index detection
-- Supporting multi-column indexes
-- Adding tests or docs
-- Reporting bugs or edge cases
+## Security
 
-You're welcome to open issues or submit pull requests.
+Please report database-safety or SQL-injection concerns privately through
+[GitHub security advisories](https://github.com/yassinbahri/django-index-optimizer/security/advisories/new).
+Do not include credentials or sensitive production queries in a public issue.
 
-### 🛠 To develop locally:
+## License
 
-```bash
-git clone https://github.com/yassinbahri/django-index-optimizer.git
-cd django-index-optimizer
-pip install -e .
-```
-
-Then, add `"optimizer"` to a Django project and run tests or the management command.
-
----
-
-## 📃 License
-
-This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
-
----
-
-## 🙌 A Note to Beginners
-
-This tool was built with **you** in mind. Indexing is a powerful and often overlooked step in web app performance — by learning it early, you’ll save yourself many headaches down the line. 💡
-
-Happy optimizing!
+MIT. See [LICENSE](LICENSE).
