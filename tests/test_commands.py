@@ -24,11 +24,13 @@ def test_handle_passes_limit_to_query_analyzer():
 
 @pytest.mark.parametrize("limit", [0, -1])
 def test_handle_rejects_non_positive_limit_without_querying(limit):
-    with patch(
-        "optimizer.management.commands.optimize_indexes.get_frequent_queries"
-    ) as get_frequent_queries:
-        with pytest.raises(CommandError, match="positive integer"):
-            Command().handle(limit=limit)
+    with (
+        patch(
+            "optimizer.management.commands.optimize_indexes.get_frequent_queries"
+        ) as get_frequent_queries,
+        pytest.raises(CommandError, match="positive integer"),
+    ):
+        Command().handle(limit=limit)
 
     get_frequent_queries.assert_not_called()
 
