@@ -107,6 +107,7 @@ python manage.py optimize_indexes
 ```
 
 It is documented for reproducibility, not recommended for production use.
+For setup and troubleshooting, see the [`pg_stat_statements` guide](docs/pg-stat-statements.md).
 
 ## Download statistics
 
