@@ -106,6 +106,11 @@ The historical command is:
 python manage.py optimize_indexes
 ```
 
+To inspect a different number of statements, pass a positive limit:
+
+```console
+python manage.py optimize_indexes --limit 25
+```
 It is documented for reproducibility, not recommended for production use.
 For setup and troubleshooting, see the [`pg_stat_statements` guide](docs/pg-stat-statements.md).
 
