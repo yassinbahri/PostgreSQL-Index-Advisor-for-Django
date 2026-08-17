@@ -26,7 +26,7 @@ def extract_query_patterns(queries):
             re.IGNORECASE,
         )
         for match in matches:
-            cols = re.findall(r"(\\w+)\\s*=|>|<", match)
+            cols = re.findall(r"(\w+)\s*(?:=|>|<|>=|<=|!=)", match)
             for col in cols:
                 column_counter[col] = column_counter.get(col, 0) + 1
     return column_counter

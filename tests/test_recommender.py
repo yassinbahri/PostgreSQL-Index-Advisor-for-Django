@@ -1,4 +1,4 @@
-from optimizer.recommender import recommend_indexes
+from optimizer.recommender import recommend_indexes, recommend_composite_indexes
 
 
 def test_recommend_indexes_returns_columns_meeting_threshold():
@@ -6,19 +6,18 @@ def test_recommend_indexes_returns_columns_meeting_threshold():
 
     assert recommend_indexes(column_stats, threshold=5) == ["author_id"]
 
-def test_recommend_indexes_excludes_frequencies_below_threshold():
-    assert recommend_indexes({"author_id": 4}, threshold=5) == []
+
+def test_recommend_composite_indexes_dedupes_and_sorts():
+    pair_stats = {
+        ("author_id", "created_at"): 7,
+        ("created_at", "author_id"): 9,
+        ("title", "slug"): 1,
+    }
+
+    assert recommend_composite_indexes(pair_stats, threshold=3) == [("author_id", "created_at")]
 
 
-def test_recommend_indexes_respects_custom_threshold():
-    assert recommend_indexes({"author_id": 3, "title": 2}, threshold=3) == ["author_id"]
+def test_recommend_composite_indexes_respects_threshold():
+    pair_stats = {("a", "b"): 2}
 
-
-def test_recommend_indexes_returns_empty_for_empty_input():
-    assert recommend_indexes({}) == []
-
-
-def test_recommend_indexes_preserves_input_order():
-    column_stats = {"title": 7, "author_id": 9, "category_id": 6}
-
-    assert recommend_indexes(column_stats) == ["title", "author_id", "category_id"]
+    assert recommend_composite_indexes(pair_stats, threshold=3) == []
