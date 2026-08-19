@@ -25,6 +25,8 @@ jobs:
             django: "6.0"
           - python: "3.14"
             django: "6.0"
+          - python: "3.14"
+            django: "6.1"
 
     steps:
       - uses: actions/checkout@v6
@@ -40,3 +42,49 @@ jobs:
         run: python -m pytest
       - name: Run Ruff
         run: python -m ruff check .
+
+  postgresql:
+    name: PostgreSQL ${{ matrix.postgresql }} integration
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        postgresql: ["14", "15", "16", "17"]
+    services:
+      postgres:
+        image: postgres:${{ matrix.postgresql }}
+        env:
+          POSTGRES_DB: optimizer
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d optimizer"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Enable pg_stat_statements
+        run: |
+          docker exec ${{ job.services.postgres.id }} sh -c \
+            "echo \"shared_preload_libraries = 'pg_stat_statements'\" >> \$PGDATA/postgresql.conf"
+          docker restart ${{ job.services.postgres.id }}
+          until pg_isready -h 127.0.0.1 -U postgres -d optimizer; do sleep 1; done
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install "Django~=5.2" -e ".[test]"
+      - name: Run PostgreSQL integration test
+        env:
+          DJANGO_SETTINGS_MODULE: tests.integration.settings
+          DIO_TEST_POSTGRES: "1"
+          POSTGRES_DB: optimizer
+          POSTGRES_HOST: 127.0.0.1
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+        run: python -m pytest tests/integration
