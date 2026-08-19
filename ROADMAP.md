@@ -18,41 +18,49 @@ The recovery audit found several release-blocking problems:
 - the command does not clearly separate previewing recommendations from
   applying database changes.
 
-## Proposed 0.2.0 scope
+## 0.2.0 safe-preview scope
 
 The next release should prioritize correctness and safety over additional index
 heuristics:
 
-1. Introduce a structured recommendation containing schema, table, columns,
-   evidence, and a deterministic index name.
-2. Collect timing data from supported `pg_stat_statements` versions with clear
-   diagnostics when the extension is unavailable.
-3. Make the command preview-only by default and require an explicit `--apply`
-   option before changing the database.
-4. Create indexes outside transaction blocks with safely quoted identifiers.
-5. Detect existing and equivalent indexes before recommending a new one.
-6. Add unit tests plus PostgreSQL integration tests.
-7. Publish an explicit Python, Django, and PostgreSQL support matrix.
+1. [x] Introduce structured recommendations containing schema, table, columns,
+   workload evidence, query IDs, and deterministic index names.
+2. [x] Collect current `pg_stat_statements` timing data with actionable setup
+   and permission diagnostics.
+3. [x] Replace regex extraction with PostgreSQL-aware AST parsing.
+4. [x] Make the command preview-only and remove index execution from its path.
+5. [x] Detect equivalent and leading-prefix indexes before recommending one.
+6. [x] Provide human-readable and JSON reports with safely quoted SQL previews.
+7. [x] Prevent the analyzer from learning from its own catalog queries.
+8. [x] Run PostgreSQL 14, 15, 16, and 17 integration tests in CI.
+9. [ ] Map tables and columns back to Django model and field names.
+10. [ ] Publish the final upgrade guide.
 
-## Later ideas
+## 0.3 trust and validation
 
-- multi-column recommendations based on repeated predicate order;
-- selectivity and table-size signals;
-- JSON and SQL report output;
-- Django admin reporting;
-- before-and-after `EXPLAIN` comparisons in an explicitly enabled safe mode.
+- collect table size, row estimates, write activity, and index usage;
+- rank by workload impact while suppressing tiny or write-heavy tables;
+- validate candidates with hypothetical indexes through optional HypoPG;
+- show before-and-after planner cost and whether PostgreSQL would use the index;
+- export a Django `AddIndex` migration for mapped models;
+- snapshot reports so teams can compare recommendation changes in CI.
 
-These features should only be considered after the `0.2.0` correctness work is
-complete.
+## 0.4 daily developer workflow
 
-## Contributor-sized tasks
+- multi-column candidates based on equality/range predicate order;
+- join and ordering analysis;
+- partial and covering-index candidates when evidence supports them;
+- a local Django admin report with acknowledge/dismiss decisions;
+- recommendation fingerprints and configuration-based ignore rules;
+- unused, duplicate, invalid, and overlapping index diagnostics.
 
-The following issues are intentionally small and do not overlap the core
-database-safety redesign:
+Automatic index creation is intentionally not on the roadmap until preview,
+planner validation, locking behavior, and rollback guidance are mature.
 
-- [#1: Expand recommendation threshold tests](https://github.com/yassinbahri/django-index-optimizer/issues/1)
-- [#2: Add a `--limit` command option](https://github.com/yassinbahri/django-index-optimizer/issues/2)
-- [#3: Document `pg_stat_statements` troubleshooting](https://github.com/yassinbahri/django-index-optimizer/issues/3)
+## Contributing to the roadmap
 
-Comment on an unassigned issue before starting. The maintainer will confirm the
-scope and assign it to avoid duplicate work.
+Roadmap work is tracked in [GitHub issues](https://github.com/yassinbahri/django-index-optimizer/issues).
+Issues labeled `good first issue` are deliberately scoped so a new contributor
+can complete them without designing the recommendation engine. Comment on an
+unassigned issue before starting; the maintainer will confirm its scope and
+assign it to avoid duplicate work.
