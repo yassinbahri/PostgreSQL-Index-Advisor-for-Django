@@ -1,24 +1,11 @@
-from django.db import connection
+class IndexApplicationDisabled(RuntimeError):
+    """Raised when code attempts to apply an index automatically."""
 
 
 def create_index(table_name, column_name):
-    index_name = f"auto_idx_{table_name}_{column_name}"
-    with connection.cursor() as cursor:
-        cursor.execute(
-            """
-            DO $$
-            BEGIN
-                IF NOT EXISTS (
-                    SELECT 1 FROM pg_indexes
-                    WHERE tablename = %s AND indexname = %s
-                ) THEN
-                    EXECUTE format(
-                        'CREATE INDEX CONCURRENTLY %I ON %I (%I)',
-                        %s, %s, %s
-                    );
-                END IF;
-            END
-            $$;
-            """,
-            [table_name, index_name, index_name, table_name, column_name],
-        )
+    """Reject the unsafe automatic-application API retained from version 0.1."""
+    raise IndexApplicationDisabled(
+        "Automatic index creation is disabled. Run `python manage.py "
+        "optimize_indexes`, review the previewed SQL, and apply it through your "
+        "normal migration or database-change process."
+    )
