@@ -2,10 +2,10 @@
 
 ## Current status
 
-Version `0.1.0` has been recovered from the source archive published to PyPI.
-It is an early alpha and should not be used to modify a production database.
+Version `0.2.0` provides a safe, preview-only recommendation workflow. It does
+not modify the database.
 
-The recovery audit found several release-blocking problems:
+Version `0.2.0` resolved the release-blocking problems found in `0.1.0`:
 
 - the recommender returns column-name strings while the management command
   expects objects containing both a table and a column;
@@ -34,7 +34,6 @@ heuristics:
 7. [x] Prevent the analyzer from learning from its own catalog queries.
 8. [x] Run PostgreSQL 14, 15, 16, and 17 integration tests in CI.
 9. [ ] Map tables and columns back to Django model and field names.
-10. [ ] Publish the final upgrade guide.
 
 ## 0.3 trust and validation
 
@@ -59,7 +58,7 @@ planner validation, locking behavior, and rollback guidance are mature.
 
 ## Contributing to the roadmap
 
-Roadmap work is tracked in [GitHub issues](https://github.com/yassinbahri/django-index-optimizer/issues).
+Roadmap work is tracked in [GitHub issues](https://github.com/yassinbahri/PostgreSQL-Index-Advisor-for-Django/issues).
 Issues labeled `good first issue` are deliberately scoped so a new contributor
 can complete them without designing the recommendation engine. Comment on an
 unassigned issue before starting; the maintainer will confirm its scope and

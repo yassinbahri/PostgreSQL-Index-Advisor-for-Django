@@ -67,8 +67,9 @@ Each item contains:
 }
 ```
 
-New fields may be added during the `0.2.0` development cycle. The schema will
-be versioned before the stable `0.2.0` release.
+New fields may be added in minor releases while the package remains alpha. A
+versioned report envelope is planned in issue #13 before JSON compatibility is
+declared stable.
 
 ## What is intentionally excluded today
 
