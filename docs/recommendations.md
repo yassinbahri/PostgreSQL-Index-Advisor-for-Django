@@ -50,26 +50,39 @@ Until then, recommendations are candidates for investigation.
 ## JSON contract
 
 Use `--format json` when another tool or CI job needs to consume the report.
-Each item contains:
+The top-level object identifies the report schema version and contains the
+recommendations:
 
 ```json
 {
-  "schema": "public",
-  "table": "library_book",
-  "columns": ["author_id"],
-  "index_name": "dio_library_book_author_id_idx",
-  "calls": 120,
-  "total_exec_time": 3480.5,
-  "mean_exec_time": 29.004,
-  "query_ids": [123456789],
-  "reason": "Filtered in 120 calls ...",
-  "create_sql": "CREATE INDEX CONCURRENTLY ...;"
+  "report_version": 1,
+  "recommendations": [
+    {
+      "schema": "public",
+      "table": "library_book",
+      "columns": ["author_id"],
+      "index_name": "dio_library_book_author_id_idx",
+      "calls": 120,
+      "total_exec_time": 3480.5,
+      "mean_exec_time": 29.004,
+      "query_ids": [123456789],
+      "reason": "Filtered in 120 calls ...",
+      "create_sql": "CREATE INDEX CONCURRENTLY ...;"
+    }
+  ]
 }
 ```
 
-New fields may be added in minor releases while the package remains alpha. A
-versioned report envelope is planned in issue #13 before JSON compatibility is
-declared stable.
+An empty report uses the same envelope with an empty `recommendations` array.
+`report_version` versions the JSON schema independently of the package version.
+Before report version 1, `--format json` returned a bare array; consumers
+migrating from that output should now read the `recommendations` field.
+`report_version` increases when an existing field is removed, renamed, changes
+type, or changes meaning. New fields may be added without increasing it
+while the package remains alpha, so consumers should ignore unknown fields.
+Consumers should check `report_version` before reading recommendations and fail
+clearly when they encounter a version they do not support. Consumers that need
+an exact field set should also pin the package version.
 
 ## What is intentionally excluded today
 
