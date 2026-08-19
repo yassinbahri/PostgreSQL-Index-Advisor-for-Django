@@ -58,7 +58,7 @@ class Command(BaseCommand):
         if database_connection.vendor != "postgresql":
             raise CommandError(
                 f"Database alias '{database}' uses {database_connection.vendor}, but "
-                "django-index-optimizer currently supports PostgreSQL only."
+                "PostgreSQL Index Advisor for Django supports PostgreSQL only."
             )
 
         try:

@@ -1,6 +1,6 @@
 # Understanding recommendations
 
-`django-index-optimizer` treats every recommendation as a review artifact, not
+PostgreSQL Index Advisor for Django treats every recommendation as a review artifact, not
 an instruction to change a database automatically.
 
 ## Evidence collected

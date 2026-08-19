@@ -1,4 +1,4 @@
-# Contributing to django-index-optimizer
+# Contributing to PostgreSQL Index Advisor for Django
 
 Thank you for helping make PostgreSQL performance tooling easier to use from
 Django. Small, focused contributions are welcome.

@@ -1,6 +1,6 @@
 # Troubleshooting `pg_stat_statements`
 
-`django-index-optimizer` reads query statistics from PostgreSQL's
+PostgreSQL Index Advisor for Django reads query statistics from PostgreSQL's
 [`pg_stat_statements`](https://www.postgresql.org/docs/current/pgstatstatements.html)
 extension. The extension has two separate setup steps: the module must be loaded by
 the server, and the extension must be created in each database where it is used.

@@ -2,7 +2,7 @@
   <img src="https://raw.githubusercontent.com/yassinbahri/PostgreSQL-Index-Advisor-for-Django/main/docs/assets/hero.png" alt="Database query paths are analyzed and transformed into an efficient index tree" width="100%">
 </p>
 
-<h1 align="center">django-index-optimizer</h1>
+<h1 align="center">PostgreSQL Index Advisor for Django</h1>
 
 <p align="center">
   <strong>A workload-driven PostgreSQL Index Advisor for Django.</strong>
@@ -17,10 +17,14 @@
   <a href="ROADMAP.md"><img alt="Status alpha" src="https://img.shields.io/badge/Status-alpha-f0b45d"></a>
 </p>
 
-`django-index-optimizer` is a Django app for learning from
-PostgreSQL's `pg_stat_statements` data. Its goal is to identify repeated query
-patterns, compare them with existing indexes, and produce recommendations that
-a developer can understand before changing the database.
+**PostgreSQL Index Advisor for Django** learns from PostgreSQL's
+`pg_stat_statements` data. It identifies repeated query patterns, compares them
+with existing indexes, and produces recommendations that a developer can
+understand before changing the database.
+
+The project is distributed on PyPI as `django-index-optimizer` and installed as
+the Django app `optimizer`. Those technical names remain stable for existing
+users.
 
 Version `0.2.0` is preview-only: it produces evidence and safely quoted SQL for
 review but never changes the database.
@@ -116,7 +120,7 @@ using a SQL preview.
 - Only filter predicates that can be mapped unambiguously to one table are
   considered.
 - Recommendations are currently single-column B-tree candidates.
-- PostgreSQL system catalogs and the optimizer's own queries are ignored.
+- PostgreSQL system catalogs and the advisor's own queries are ignored.
 - Planner validation, write-overhead scoring, joins, ordering, partial indexes,
   and multi-column candidates are planned rather than guessed prematurely.
 

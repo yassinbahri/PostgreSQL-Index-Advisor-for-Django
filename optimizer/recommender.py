@@ -44,7 +44,7 @@ def _load_existing_indexes(patterns, using="default"):
         for schema, table in tables:
             cursor.execute(
                 """
-                /* django-index-optimizer:existing-indexes */
+                /* postgresql-index-advisor-for-django:existing-indexes */
                 SELECT array_agg(attribute.attname ORDER BY key.ordinality)
                 FROM pg_index AS index
                 JOIN pg_class AS table_class

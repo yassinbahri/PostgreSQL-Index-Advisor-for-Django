@@ -6,7 +6,7 @@ labels:
 body:
   - type: markdown
     attributes:
-      value: Thanks for helping improve django-index-optimizer.
+      value: Thanks for helping improve PostgreSQL Index Advisor for Django.
   - type: textarea
     id: description
     attributes:
