@@ -15,7 +15,7 @@ def get_frequent_queries(limit=50, using="default"):
         with connections[using].cursor() as cursor:
             cursor.execute(
                 """
-                /* django-index-optimizer:collect-workload */
+                /* postgresql-index-advisor-for-django:collect-workload */
                 SELECT queryid, query, calls, total_exec_time,
                        mean_exec_time, rows
                 FROM pg_stat_statements
