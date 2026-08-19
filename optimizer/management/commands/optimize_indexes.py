@@ -12,6 +12,8 @@ from optimizer.analyzer import (
 from optimizer.recommender import recommend_indexes
 from optimizer.rendering import create_index_sql
 
+JSON_REPORT_VERSION = 1
+
 
 class Command(BaseCommand):
     help = "Preview index recommendations from pg_stat_statements."
@@ -71,16 +73,18 @@ class Command(BaseCommand):
         )
 
         if output_format == "json":
-            payload = []
+            recommendation_payload = []
             for recommendation in recommendations:
                 item = recommendation.as_dict()
                 item["create_sql"] = create_index_sql(
                     recommendation, database_connection.ops.quote_name
                 )
-                payload.append(item)
-            self.stdout.write(
-                json.dumps(payload, indent=2)
-            )
+                recommendation_payload.append(item)
+            payload = {
+                "report_version": JSON_REPORT_VERSION,
+                "recommendations": recommendation_payload,
+            }
+            self.stdout.write(json.dumps(payload, indent=2))
             return
 
         if not recommendations:

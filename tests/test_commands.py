@@ -1,3 +1,4 @@
+import json
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -17,6 +18,21 @@ def postgresql_connection():
         {"default": connection, "analytics": connection},
     ):
         yield connection
+
+
+@pytest.fixture
+def recommendation():
+    return IndexRecommendation(
+        schema="public",
+        table="library_book",
+        columns=("author_id",),
+        index_name="dio_library_book_author_id_idx",
+        calls=20,
+        total_exec_time=250,
+        mean_exec_time=12.5,
+        query_ids=(42,),
+        reason="Repeated filter without an existing index.",
+    )
 
 
 def test_handle_passes_limit_to_query_analyzer():
@@ -90,18 +106,7 @@ def test_handle_rejects_non_positive_min_calls(min_calls):
         Command().handle(min_calls=min_calls)
 
 
-def test_handle_outputs_machine_readable_json(capsys):
-    recommendation = IndexRecommendation(
-        schema="public",
-        table="library_book",
-        columns=("author_id",),
-        index_name="dio_library_book_author_id_idx",
-        calls=20,
-        total_exec_time=250,
-        mean_exec_time=12.5,
-        query_ids=(42,),
-        reason="Repeated filter without an existing index.",
-    )
+def test_handle_outputs_versioned_machine_readable_json(capsys, recommendation):
     with (
         patch(
             "optimizer.management.commands.optimize_indexes.get_frequent_queries",
@@ -122,7 +127,76 @@ def test_handle_outputs_machine_readable_json(capsys):
     ):
         Command().handle(format="json")
 
-    assert '"table": "library_book"' in capsys.readouterr().out
+    assert json.loads(capsys.readouterr().out) == {
+        "report_version": 1,
+        "recommendations": [
+            {
+                "schema": "public",
+                "table": "library_book",
+                "columns": ["author_id"],
+                "index_name": "dio_library_book_author_id_idx",
+                "calls": 20,
+                "total_exec_time": 250,
+                "mean_exec_time": 12.5,
+                "query_ids": [42],
+                "reason": "Repeated filter without an existing index.",
+                "create_sql": 'CREATE INDEX CONCURRENTLY "example";',
+            }
+        ],
+    }
+
+
+def test_handle_outputs_versioned_empty_json_report(capsys):
+    with (
+        patch(
+            "optimizer.management.commands.optimize_indexes.get_frequent_queries",
+            return_value=[],
+        ),
+        patch(
+            "optimizer.management.commands.optimize_indexes.extract_query_patterns",
+            return_value=[],
+        ),
+        patch(
+            "optimizer.management.commands.optimize_indexes.recommend_indexes",
+            return_value=[],
+        ),
+    ):
+        Command().handle(format="json")
+
+    assert json.loads(capsys.readouterr().out) == {
+        "report_version": 1,
+        "recommendations": [],
+    }
+
+
+def test_handle_keeps_text_output_human_readable(capsys, recommendation):
+    with (
+        patch(
+            "optimizer.management.commands.optimize_indexes.get_frequent_queries",
+            return_value=[],
+        ),
+        patch(
+            "optimizer.management.commands.optimize_indexes.extract_query_patterns",
+            return_value=[],
+        ),
+        patch(
+            "optimizer.management.commands.optimize_indexes.recommend_indexes",
+            return_value=[recommendation],
+        ),
+        patch(
+            "optimizer.management.commands.optimize_indexes.create_index_sql",
+            return_value='CREATE INDEX CONCURRENTLY "example";',
+        ),
+    ):
+        Command().handle(format="text")
+
+    assert capsys.readouterr().out == (
+        "1 recommendation(s). Review before applying.\n"
+        "\npublic.library_book (author_id)\n"
+        "  Suggested name: dio_library_book_author_id_idx\n"
+        "  Evidence: Repeated filter without an existing index.\n"
+        '  SQL preview: CREATE INDEX CONCURRENTLY "example";\n'
+    )
 
 
 def test_handle_uses_selected_database_alias():
