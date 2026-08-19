@@ -1,11 +1,11 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/yassinbahri/django-index-optimizer/main/docs/assets/hero.png" alt="Database query paths are analyzed and transformed into an efficient index tree" width="100%">
+  <img src="https://raw.githubusercontent.com/yassinbahri/PostgreSQL-Index-Advisor-for-Django/main/docs/assets/hero.png" alt="Database query paths are analyzed and transformed into an efficient index tree" width="100%">
 </p>
 
 <h1 align="center">django-index-optimizer</h1>
 
 <p align="center">
-  <strong>Turn recurring PostgreSQL query patterns into reviewable index recommendations for Django.</strong>
+  <strong>A workload-driven PostgreSQL Index Advisor for Django.</strong>
 </p>
 
 <p align="center">
@@ -17,18 +17,15 @@
   <a href="ROADMAP.md"><img alt="Status alpha" src="https://img.shields.io/badge/Status-alpha-f0b45d"></a>
 </p>
 
-`django-index-optimizer` is an experimental Django app for learning from
+`django-index-optimizer` is a Django app for learning from
 PostgreSQL's `pg_stat_statements` data. Its goal is to identify repeated query
 patterns, compare them with existing indexes, and produce recommendations that
 a developer can understand before changing the database.
 
-> [!WARNING]
-> The published `0.1.0` release is an early proof of concept with known
-> execution-path defects. Do not run its management command against a
-> production database. Version `0.2.0` replaces that path with a preview-only,
-> evidence-based workflow.
+Version `0.2.0` is preview-only: it produces evidence and safely quoted SQL for
+review but never changes the database.
 
-## What the project is becoming
+## How it works
 
 ```text
 pg_stat_statements
@@ -46,7 +43,7 @@ pg_stat_statements
  review first ──► migration or database change process
 ```
 
-The `0.2.0` development workflow:
+The `0.2.0` workflow:
 
 1. collects slow or frequently executed PostgreSQL statements;
 2. parses PostgreSQL filter predicates into schema, table, and column evidence;
@@ -58,27 +55,10 @@ The `0.2.0` development workflow:
 Correctness and database safety take priority over generating a large number
 of suggestions.
 
-## Current status
-
-| Area | `0.1.0` on PyPI | `0.2.0` development preview |
-| --- | --- | --- |
-| Query source | `pg_stat_statements` | Current timing columns and actionable diagnostics |
-| Recommendations | Single-column proof of concept | Structured candidates ranked by workload time |
-| Existing indexes | Not reliably compared | Detect equivalent and leading-prefix coverage |
-| Default behavior | Attempts database changes | Preview only |
-| Applying indexes | Known PostgreSQL defect | Never applied; safely quoted SQL is previewed |
-| Tests | Minimal | Parser, collector, recommender, command, and SQL coverage |
-
-See the [roadmap](ROADMAP.md) for the audited defects, release scope, and later
-ideas.
-
-## Explore the published alpha
-
-If you want to inspect the historical implementation, use a disposable local
-PostgreSQL database:
+## Installation
 
 ```console
-python -m pip install django-index-optimizer==0.1.0
+python -m pip install django-index-optimizer
 ```
 
 Add the app:
@@ -100,34 +80,16 @@ shared_preload_libraries = 'pg_stat_statements'
 CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
 ```
 
-The historical command is:
+Preview recommendations:
 
 ```console
 python manage.py optimize_indexes
 ```
 
-To inspect a different number of statements, pass a positive limit:
-
-```console
-python manage.py optimize_indexes --limit 25
-```
-It is documented for reproducibility, not recommended for production use.
-For setup and troubleshooting, see the [`pg_stat_statements` guide](docs/pg-stat-statements.md).
-
-## Try the 0.2 development preview
-
-Use a development database first. Install the current branch directly from
-GitHub until `0.2.0` is released:
-
-```console
-python -m pip install "django-index-optimizer @ git+https://github.com/yassinbahri/django-index-optimizer.git@v0.2-preview-workflow"
-```
-
-Preview query-backed recommendations:
-
-```console
 python manage.py optimize_indexes --limit 100 --min-calls 10
 ```
+
+For setup and troubleshooting, see the [`pg_stat_statements` guide](docs/pg-stat-statements.md).
 
 Each recommendation includes the affected table and columns, workload calls,
 total execution time, the reason it was selected, and safely quoted
@@ -177,7 +139,7 @@ count of unique users. [View the current breakdown on PyPI Stats](https://pypist
 New contributors are welcome, including developers who are still learning
 Django or PostgreSQL internals.
 
-1. Choose an unassigned [`good first issue`](https://github.com/yassinbahri/django-index-optimizer/issues?q=is%3Aissue%20state%3Aopen%20label%3A%22good%20first%20issue%22).
+1. Choose an unassigned [`good first issue`](https://github.com/yassinbahri/PostgreSQL-Index-Advisor-for-Django/issues?q=is%3Aissue%20state%3Aopen%20label%3A%22good%20first%20issue%22).
 2. Comment with the approach you want to take and wait for confirmation.
 3. Follow the environment, test, and pull-request steps in
    [CONTRIBUTING.md](CONTRIBUTING.md).
@@ -188,7 +150,7 @@ server unless the issue explicitly says otherwise.
 ## Security
 
 Report database-safety or SQL-injection concerns privately through
-[GitHub security advisories](https://github.com/yassinbahri/django-index-optimizer/security/advisories/new).
+[GitHub security advisories](https://github.com/yassinbahri/PostgreSQL-Index-Advisor-for-Django/security/advisories/new).
 Never include credentials or sensitive production queries in a public issue.
 
 ## License

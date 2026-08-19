@@ -16,8 +16,8 @@ Django. Small, focused contributions are welcome.
 Fork the repository on GitHub, then clone your fork:
 
 ```bash
-git clone https://github.com/YOUR-USERNAME/django-index-optimizer.git
-cd django-index-optimizer
+git clone https://github.com/YOUR-USERNAME/PostgreSQL-Index-Advisor-for-Django.git
+cd PostgreSQL-Index-Advisor-for-Django
 python -m venv .venv
 ```
 
