@@ -220,3 +220,66 @@ def test_handle_rejects_non_postgresql_database(postgresql_connection):
 
     with pytest.raises(CommandError, match="supports PostgreSQL only"):
         Command().handle()
+
+
+@pytest.mark.parametrize("output_format", ["text", "json"])
+def test_fail_on_recommendations_reports_before_raising(
+    output_format, capsys, recommendation
+):
+    with (
+        patch(
+            "optimizer.management.commands.optimize_indexes.get_frequent_queries",
+            return_value=[],
+        ),
+        patch(
+            "optimizer.management.commands.optimize_indexes.extract_query_patterns",
+            return_value=[],
+        ),
+        patch(
+            "optimizer.management.commands.optimize_indexes.recommend_indexes",
+            return_value=[recommendation],
+        ),
+        pytest.raises(CommandError, match="found 1 recommendation"),
+    ):
+        Command().handle(
+            format=output_format,
+            fail_on_recommendations=True,
+        )
+
+    output = capsys.readouterr().out
+    if output_format == "json":
+        assert json.loads(output)["recommendations"][0]["table"] == "library_book"
+    else:
+        assert "1 recommendation(s)" in output
+        assert "library_book" in output
+
+
+@pytest.mark.parametrize("output_format", ["text", "json"])
+def test_fail_on_recommendations_succeeds_when_report_is_empty(output_format, capsys):
+    with (
+        patch(
+            "optimizer.management.commands.optimize_indexes.get_frequent_queries",
+            return_value=[],
+        ),
+        patch(
+            "optimizer.management.commands.optimize_indexes.extract_query_patterns",
+            return_value=[],
+        ),
+        patch(
+            "optimizer.management.commands.optimize_indexes.recommend_indexes",
+            return_value=[],
+        ),
+    ):
+        Command().handle(
+            format=output_format,
+            fail_on_recommendations=True,
+        )
+
+    output = capsys.readouterr().out
+    if output_format == "json":
+        assert json.loads(output) == {
+            "report_version": 1,
+            "recommendations": [],
+        }
+    else:
+        assert "No missing indexes" in output

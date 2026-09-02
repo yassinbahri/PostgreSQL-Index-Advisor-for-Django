@@ -90,6 +90,7 @@ Preview recommendations:
 python manage.py optimize_indexes
 ```
 
+```console
 python manage.py optimize_indexes --limit 100 --min-calls 10
 ```
 
@@ -106,6 +107,19 @@ For CI, scripts, or a review artifact:
 python manage.py optimize_indexes --limit 100 --min-calls 10 --format json \
   > index-recommendations.json
 ```
+
+To make recommendations fail an opt-in CI policy check while preserving the
+complete report:
+
+```console
+python manage.py optimize_indexes --format json --fail-on-recommendations \
+  > index-recommendations.json
+```
+
+The command exits successfully when the report is empty and unsuccessfully
+when it contains one or more candidates. Recommendations remain review
+artifacts: this option does not mean every suggestion should become a
+migration or be applied automatically.
 
 Normalized SQL text from `pg_stat_statements` is parsed in memory but is not
 included in reports. Query IDs are included so a recommendation can be traced
