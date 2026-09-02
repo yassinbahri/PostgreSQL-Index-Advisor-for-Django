@@ -42,11 +42,17 @@ class Command(BaseCommand):
             default="text",
             help="Output human-readable text or machine-readable JSON.",
         )
+        parser.add_argument(
+            "--fail-on-recommendations",
+            action="store_true",
+            help="Exit unsuccessfully after reporting one or more recommendations.",
+        )
 
     def handle(self, *args, **kwargs):
         limit = kwargs.get("limit", 50)
         min_calls = kwargs.get("min_calls", 5)
         output_format = kwargs.get("format", "text")
+        fail_on_recommendations = kwargs.get("fail_on_recommendations", False)
         database = kwargs.get("database", DEFAULT_DB_ALIAS)
         if limit <= 0:
             raise CommandError("--limit must be a positive integer.")
@@ -85,6 +91,7 @@ class Command(BaseCommand):
                 "recommendations": recommendation_payload,
             }
             self.stdout.write(json.dumps(payload, indent=2))
+            self._fail_if_requested(recommendations, fail_on_recommendations)
             return
 
         if not recommendations:
@@ -105,7 +112,13 @@ class Command(BaseCommand):
             self.stdout.write(f"  Evidence: {recommendation.reason}")
             self.stdout.write(
                 "  SQL preview: "
-                + create_index_sql(
-                    recommendation, database_connection.ops.quote_name
-                )
+                + create_index_sql(recommendation, database_connection.ops.quote_name)
+            )
+        self._fail_if_requested(recommendations, fail_on_recommendations)
+
+    @staticmethod
+    def _fail_if_requested(recommendations, fail_on_recommendations):
+        if fail_on_recommendations and recommendations:
+            raise CommandError(
+                f"Index advisor found {len(recommendations)} recommendation(s)."
             )
