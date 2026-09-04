@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.1 - 2026-09-04
+
+- Added CI-friendly non-zero exit mode for actionable recommendations.
+- Added machine-readable JSON recommendation reports.
+
 ## 0.2.0 - 2026-08-19
 
 - Replaced regex query extraction with PostgreSQL-aware SQL parsing.
