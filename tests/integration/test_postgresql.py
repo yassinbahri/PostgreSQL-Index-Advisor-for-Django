@@ -40,6 +40,7 @@ def test_workload_recommendation_and_existing_index_suppression():
             FROM generate_series(1, 1000) AS number
             """
         )
+        cursor.execute("ANALYZE dio_integration_book")
         cursor.execute("SELECT pg_stat_statements_reset()")
         for _ in range(10):
             cursor.execute(
@@ -65,6 +66,9 @@ def test_workload_recommendation_and_existing_index_suppression():
     assert matching[0].django_fields == ("author",)
     assert matching[0].django_field_kinds == ("relation",)
     assert matching[0].django_index == 'models.Index(fields=["author"])'
+    assert matching[0].table_statistics.estimated_rows == 1000
+    assert matching[0].table_statistics.table_bytes > 0
+    assert matching[0].score.decision == "recommend"
 
     with connection.cursor() as cursor:
         cursor.execute(

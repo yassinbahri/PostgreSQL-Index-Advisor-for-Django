@@ -115,12 +115,33 @@ class Command(BaseCommand):
             )
             self.stdout.write(f"  Suggested name: {recommendation.index_name}")
             self.stdout.write(f"  Evidence: {recommendation.reason}")
+            self._write_score(recommendation)
             self._write_django_mapping(recommendation)
             self.stdout.write(
                 "  SQL preview: "
                 + create_index_sql(recommendation, database_connection.ops.quote_name)
             )
         self._fail_if_requested(recommendations, fail_on_recommendations)
+
+    def _write_score(self, recommendation):
+        score = recommendation.score
+        if score is None:
+            return
+        self.stdout.write(
+            f"  Score: {score.total}/100 "
+            f"(workload {score.workload}, table {score.table_impact}, "
+            f"reads {score.read_pressure}, write penalty {score.write_penalty})"
+        )
+        statistics = recommendation.table_statistics
+        if statistics is None:
+            self.stdout.write("  Table statistics: unavailable")
+            return
+        self.stdout.write(
+            f"  Table statistics: {statistics.estimated_rows} estimated rows, "
+            f"{statistics.table_bytes} bytes, "
+            f"{statistics.sequential_scans} sequential scans, "
+            f"{statistics.writes} writes"
+        )
 
     def _write_django_mapping(self, recommendation):
         if recommendation.model_mapping == "matched":
