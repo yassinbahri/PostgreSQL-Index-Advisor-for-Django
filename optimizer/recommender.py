@@ -1,11 +1,13 @@
 import hashlib
+import json
 
 from django.db import connections
 
+from optimizer.model_mapping import match_model
 from optimizer.types import IndexRecommendation
 
 
-def recommend_indexes(patterns, min_calls=5, using="default"):
+def recommend_indexes(patterns, min_calls=5, using="default", model_map=None):
     existing_indexes = _load_existing_indexes(patterns, using=using)
     recommendations = []
     for pattern in patterns:
@@ -14,6 +16,16 @@ def recommend_indexes(patterns, min_calls=5, using="default"):
         indexes = existing_indexes.get((pattern.schema, pattern.table), ())
         if any(index[: len(pattern.columns)] == pattern.columns for index in indexes):
             continue
+        model_match = (
+            match_model(model_map, pattern.schema, pattern.table, pattern.columns)
+            if model_map is not None
+            else None
+        )
+        django_fields = (
+            tuple(field.name for field in model_match.fields)
+            if model_match is not None and model_match.status == "matched"
+            else ()
+        )
         recommendations.append(
             IndexRecommendation(
                 schema=pattern.schema,
@@ -28,6 +40,25 @@ def recommend_indexes(patterns, min_calls=5, using="default"):
                     f"Filtered in {pattern.calls} calls accounting for "
                     f"{pattern.total_exec_time:.1f} ms of execution time; no "
                     "existing index has these columns as its leading prefix."
+                ),
+                model_mapping=(
+                    model_match.status if model_match is not None else "not_checked"
+                ),
+                django_model=(
+                    model_match.model.label
+                    if model_match is not None and model_match.model is not None
+                    else None
+                ),
+                django_fields=django_fields,
+                django_field_kinds=(
+                    tuple(field.kind for field in model_match.fields)
+                    if model_match is not None
+                    else ()
+                ),
+                django_index=(
+                    f"models.Index(fields={json.dumps(list(django_fields))})"
+                    if django_fields
+                    else None
                 ),
             )
         )
