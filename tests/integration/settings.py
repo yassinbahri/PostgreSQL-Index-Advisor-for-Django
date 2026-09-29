@@ -1,7 +1,7 @@
 import os
 
 SECRET_KEY = "django-index-optimizer-integration-tests"
-INSTALLED_APPS = ["optimizer"]
+INSTALLED_APPS = ["optimizer", "tests.integration.apps.IntegrationTestsConfig"]
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
