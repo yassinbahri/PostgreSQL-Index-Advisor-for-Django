@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+- Mapped PostgreSQL tables and columns to managed Django models and fields.
+- Added reviewable `models.Index(fields=[...])` suggestions alongside SQL.
+- Reported unmapped tables, ambiguous table ownership, and unmapped columns
+  explicitly instead of guessing.
+- Distinguished ordinary, relation, and generated Django fields in JSON
+  recommendation evidence.
+
 ## 0.2.1 - 2026-09-04
 
 - Added CI-friendly non-zero exit mode for actionable recommendations.

@@ -16,6 +16,34 @@ from `pg_stat_statements`. For each unambiguous filter column it aggregates:
 Raw query text is not included in text or JSON output. This reduces the chance
 of copying sensitive query literals into CI artifacts, tickets, or chat.
 
+## Django model mapping
+
+The advisor compares each PostgreSQL `(schema, table)` identity with managed,
+non-proxy models in Django's application registry. It then maps database column
+names back to concrete Django field names. This means a foreign-key column such
+as `author_id` can produce:
+
+```python
+models.Index(fields=["author"])
+```
+
+The mapping supports default tables, custom `db_table` values, common
+schema-qualified table forms, custom `db_column` values, inherited concrete
+fields, relation fields, and generated fields.
+
+The `model_mapping` field makes uncertainty explicit:
+
+- `matched`: exactly one managed model and every column matched;
+- `unmapped_table`: no managed model owns the table;
+- `ambiguous_table`: multiple managed models declare the same table;
+- `unmapped_column`: the model was found but at least one column was not;
+- `not_checked`: model mapping was not requested through the lower-level Python
+  API.
+
+The management command always performs the check. It does not choose a model
+when ownership is ambiguous and does not return a partial field suggestion when
+a column is unknown.
+
 ## Existing-index coverage
 
 Before returning a candidate, the recommender reads valid, ready indexes from
@@ -67,6 +95,11 @@ recommendations:
       "mean_exec_time": 29.004,
       "query_ids": [123456789],
       "reason": "Filtered in 120 calls ...",
+      "model_mapping": "matched",
+      "django_model": "library.Book",
+      "django_fields": ["author"],
+      "django_field_kinds": ["relation"],
+      "django_index": "models.Index(fields=[\"author\"])",
       "create_sql": "CREATE INDEX CONCURRENTLY ...;"
     }
   ]
