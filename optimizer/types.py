@@ -23,6 +23,21 @@ class QueryPattern:
 
 
 @dataclass(frozen=True)
+class TableStatistics:
+    estimated_rows: int
+    table_bytes: int
+    sequential_scans: int
+    index_scans: int
+    inserts: int
+    updates: int
+    deletes: int
+
+    @property
+    def writes(self):
+        return self.inserts + self.updates + self.deletes
+
+
+@dataclass(frozen=True)
 class IndexRecommendation:
     schema: str
     table: str
@@ -38,6 +53,7 @@ class IndexRecommendation:
     django_fields: tuple[str, ...] = ()
     django_field_kinds: tuple[str, ...] = ()
     django_index: str | None = None
+    table_statistics: TableStatistics | None = None
 
     def as_dict(self):
         return asdict(self)
