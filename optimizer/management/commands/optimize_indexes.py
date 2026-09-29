@@ -9,6 +9,7 @@ from optimizer.analyzer import (
     extract_query_patterns,
     get_frequent_queries,
 )
+from optimizer.model_mapping import build_model_map
 from optimizer.recommender import recommend_indexes
 from optimizer.rendering import create_index_sql
 
@@ -74,8 +75,12 @@ class Command(BaseCommand):
         except QueryCollectionError as exc:
             raise CommandError(str(exc)) from exc
         patterns = extract_query_patterns(query_stats)
+        model_map = build_model_map()
         recommendations = recommend_indexes(
-            patterns, min_calls=min_calls, using=database
+            patterns,
+            min_calls=min_calls,
+            using=database,
+            model_map=model_map,
         )
 
         if output_format == "json":
@@ -110,11 +115,29 @@ class Command(BaseCommand):
             )
             self.stdout.write(f"  Suggested name: {recommendation.index_name}")
             self.stdout.write(f"  Evidence: {recommendation.reason}")
+            self._write_django_mapping(recommendation)
             self.stdout.write(
                 "  SQL preview: "
                 + create_index_sql(recommendation, database_connection.ops.quote_name)
             )
         self._fail_if_requested(recommendations, fail_on_recommendations)
+
+    def _write_django_mapping(self, recommendation):
+        if recommendation.model_mapping == "matched":
+            fields = ", ".join(recommendation.django_fields)
+            self.stdout.write(f"  Django model: {recommendation.django_model}")
+            self.stdout.write(f"  Django fields: {fields}")
+            self.stdout.write(f"  Django suggestion: {recommendation.django_index}")
+            return
+        messages = {
+            "unmapped_table": "no managed Django model found",
+            "ambiguous_table": "multiple Django models use this table",
+            "unmapped_column": "model found, but one or more columns are unmapped",
+        }
+        if recommendation.model_mapping in messages:
+            self.stdout.write(
+                f"  Django mapping: {messages[recommendation.model_mapping]}"
+            )
 
     @staticmethod
     def _fail_if_requested(recommendations, fail_on_recommendations):
