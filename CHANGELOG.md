@@ -8,6 +8,12 @@
   explicitly instead of guessing.
 - Distinguished ordinary, relation, and generated Django fields in JSON
   recommendation evidence.
+- Added read-only PostgreSQL table-size, estimated-row, scan, and write-activity
+  evidence.
+- Added an explainable 0-100 score with visible workload, table-impact,
+  read-pressure, and write-penalty components.
+- Suppressed tiny-table and strongly write-heavy candidates conservatively,
+  while keeping recommendations when catalog statistics are unavailable.
 
 ## 0.2.1 - 2026-09-04
 

@@ -44,6 +44,44 @@ The management command always performs the check. It does not choose a model
 when ownership is ambiguous and does not return a partial field suggestion when
 a column is unknown.
 
+## Explainable scoring
+
+Each candidate receives a score from 0 to 100. The score is an explainable
+ranking aid, not a machine-learning confidence value. Its components are:
+
+- workload, from 0 to 40, based on statement calls and total execution time;
+- table impact, from 0 to 25, based on estimated rows and relation size;
+- read pressure, from 0 to 20, based on sequential scans;
+- write penalty, from 0 to 30, based on inserts, updates, and deletes.
+
+The total is `workload + table impact + read pressure - write penalty`, clamped
+to the 0-100 range. Reports expose every component and the evidence used to
+calculate it, so two candidates can be compared without treating the final
+number as a black box.
+
+### Conservative suppression
+
+The advisor omits a candidate when either of these rules applies:
+
+- the table has fewer than 1,000 estimated rows *and* occupies less than 1 MiB;
+- the table has at least 1,000 recorded writes and its write count is at least
+  four times the candidate's calls plus the table's sequential scans.
+
+These rules deliberately avoid recommending indexes whose likely maintenance
+cost outweighs the available read evidence.
+
+### Statistics availability
+
+Table evidence is read without modifying the database from `pg_class`,
+`pg_namespace`, `pg_stat_all_tables`, and `pg_relation_size()`. If those
+statistics cannot be read, the advisor keeps the candidate, reports
+`table_statistics` as `null`, and ranks it from workload evidence only. It does
+not invent table size or write activity.
+
+PostgreSQL statistics can be reset, and the collection window for table
+statistics may differ from `pg_stat_statements`. Treat the score as evidence to
+review alongside your knowledge of the workload.
+
 ## Existing-index coverage
 
 Before returning a candidate, the recommender reads valid, ready indexes from
@@ -72,8 +110,8 @@ Before using a preview, verify at least:
    index the current comparison cannot model;
 5. PostgreSQL's planner is likely to use it.
 
-Planner validation and write-overhead scoring are planned for the next stage.
-Until then, recommendations are candidates for investigation.
+Planner validation remains outside the current scope. Recommendations are
+still candidates for investigation rather than instructions to create indexes.
 
 ## JSON contract
 
@@ -100,6 +138,26 @@ recommendations:
       "django_fields": ["author"],
       "django_field_kinds": ["relation"],
       "django_index": "models.Index(fields=[\"author\"])",
+      "table_statistics": {
+        "estimated_rows": 100000,
+        "table_bytes": 104857600,
+        "sequential_scans": 1000,
+        "index_scans": 100,
+        "inserts": 10,
+        "updates": 10,
+        "deletes": 0
+      },
+      "score": {
+        "total": 60,
+        "workload": 30,
+        "table_impact": 15,
+        "read_pressure": 15,
+        "write_penalty": 0,
+        "decision": "recommend",
+        "reasons": [
+          "Score combines workload frequency and time, table impact, sequential scan pressure, and estimated write overhead."
+        ]
+      },
       "create_sql": "CREATE INDEX CONCURRENTLY ...;"
     }
   ]
