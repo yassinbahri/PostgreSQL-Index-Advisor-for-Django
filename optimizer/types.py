@@ -33,6 +33,11 @@ class IndexRecommendation:
     mean_exec_time: float
     query_ids: tuple[int, ...]
     reason: str
+    model_mapping: str = "not_checked"
+    django_model: str | None = None
+    django_fields: tuple[str, ...] = ()
+    django_field_kinds: tuple[str, ...] = ()
+    django_index: str | None = None
 
     def as_dict(self):
         return asdict(self)

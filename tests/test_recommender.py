@@ -1,5 +1,6 @@
 from unittest.mock import patch
 
+from optimizer.model_mapping import DjangoFieldReference, DjangoModelReference
 from optimizer.recommender import _index_name, recommend_indexes
 from optimizer.types import QueryPattern
 
@@ -26,6 +27,43 @@ def test_recommend_indexes_returns_structured_evidence():
     assert recommendation.columns == ("author_id",)
     assert recommendation.calls == 5
     assert recommendation.query_ids == (42,)
+
+
+def test_recommend_indexes_includes_django_native_suggestion():
+    model_map = {
+        ("public", "books_book"): (
+            DjangoModelReference(
+                label="books.Book",
+                schema="public",
+                table="books_book",
+                fields=(
+                    DjangoFieldReference(
+                        name="author",
+                        column="author_id",
+                        kind="relation",
+                    ),
+                ),
+            ),
+        )
+    }
+    with patch("optimizer.recommender._load_existing_indexes", return_value={}):
+        recommendation = recommend_indexes([pattern()], model_map=model_map)[0]
+
+    assert recommendation.model_mapping == "matched"
+    assert recommendation.django_model == "books.Book"
+    assert recommendation.django_fields == ("author",)
+    assert recommendation.django_field_kinds == ("relation",)
+    assert recommendation.django_index == 'models.Index(fields=["author"])'
+
+
+def test_recommend_indexes_reports_unmapped_table_without_guessing():
+    with patch("optimizer.recommender._load_existing_indexes", return_value={}):
+        recommendation = recommend_indexes([pattern()], model_map={})[0]
+
+    assert recommendation.model_mapping == "unmapped_table"
+    assert recommendation.django_model is None
+    assert recommendation.django_fields == ()
+    assert recommendation.django_index is None
 
 
 def test_recommend_indexes_excludes_frequencies_below_threshold():
