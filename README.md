@@ -102,6 +102,18 @@ total execution time, the reason it was selected, and safely quoted
 `CREATE INDEX CONCURRENTLY` SQL. The SQL is printed for review and is never
 executed.
 
+Recommendations are ranked with an explainable score:
+
+```text
+Score: 60/100 (workload 30, table 15, reads 15, write penalty 0)
+Table statistics: 100000 estimated rows, 104857600 bytes, 1000 sequential scans, 20 writes
+```
+
+The score uses read-only PostgreSQL catalog statistics. Every component is
+included in text and JSON reports; it is not a machine-learning confidence
+number. If statistics are unavailable, the advisor keeps the candidate and
+applies no size or write penalty rather than inventing evidence.
+
 When a table belongs to one managed Django model, the report also includes a
 reviewable model suggestion:
 
@@ -152,8 +164,12 @@ using a SQL preview.
 - Django suggestions are review artifacts and are never inserted into model or
   migration files automatically.
 - PostgreSQL system catalogs and the advisor's own queries are ignored.
-- Planner validation, write-overhead scoring, joins, ordering, partial indexes,
-  and multi-column candidates are planned rather than guessed prematurely.
+- Candidates for tables below both 1,000 estimated rows and 1 MiB are
+  suppressed because PostgreSQL will commonly prefer a sequential scan.
+- Strongly write-heavy candidates are suppressed when at least 1,000 writes
+  exceed observed candidate read pressure by four times.
+- Planner validation, joins, ordering, partial indexes, and multi-column
+  candidates are planned rather than guessed prematurely.
 
 Supported combinations follow Django: Django 5.2 supports PostgreSQL 14+, and
 Django 6.1 supports PostgreSQL 15+. Python 3.10–3.14 is supported where the
