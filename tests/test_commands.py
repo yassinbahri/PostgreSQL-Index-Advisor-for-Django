@@ -1,4 +1,5 @@
 import json
+from dataclasses import replace
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -13,9 +14,15 @@ def postgresql_connection():
     connection = MagicMock()
     connection.vendor = "postgresql"
     connection.ops.quote_name.side_effect = lambda value: f'"{value}"'
-    with patch(
-        "optimizer.management.commands.optimize_indexes.connections",
-        {"default": connection, "analytics": connection},
+    with (
+        patch(
+            "optimizer.management.commands.optimize_indexes.connections",
+            {"default": connection, "analytics": connection},
+        ),
+        patch(
+            "optimizer.management.commands.optimize_indexes.build_model_map",
+            return_value={},
+        ),
     ):
         yield connection
 
@@ -97,7 +104,9 @@ def test_handle_passes_min_calls_to_recommender():
     ):
         Command().handle(min_calls=12)
 
-    recommend_indexes.assert_called_once_with([], min_calls=12, using="default")
+    recommend_indexes.assert_called_once_with(
+        [], min_calls=12, using="default", model_map={}
+    )
 
 
 @pytest.mark.parametrize("min_calls", [0, -1])
@@ -140,6 +149,11 @@ def test_handle_outputs_versioned_machine_readable_json(capsys, recommendation):
                 "mean_exec_time": 12.5,
                 "query_ids": [42],
                 "reason": "Repeated filter without an existing index.",
+                "model_mapping": "not_checked",
+                "django_model": None,
+                "django_fields": [],
+                "django_field_kinds": [],
+                "django_index": None,
                 "create_sql": 'CREATE INDEX CONCURRENTLY "example";',
             }
         ],
@@ -197,6 +211,66 @@ def test_handle_keeps_text_output_human_readable(capsys, recommendation):
         "  Evidence: Repeated filter without an existing index.\n"
         '  SQL preview: CREATE INDEX CONCURRENTLY "example";\n'
     )
+
+
+def test_handle_outputs_django_model_and_index_suggestion(capsys, recommendation):
+    mapped = replace(
+        recommendation,
+        model_mapping="matched",
+        django_model="library.Book",
+        django_fields=("author",),
+        django_field_kinds=("relation",),
+        django_index='models.Index(fields=["author"])',
+    )
+    with (
+        patch(
+            "optimizer.management.commands.optimize_indexes.get_frequent_queries",
+            return_value=[],
+        ),
+        patch(
+            "optimizer.management.commands.optimize_indexes.extract_query_patterns",
+            return_value=[],
+        ),
+        patch(
+            "optimizer.management.commands.optimize_indexes.recommend_indexes",
+            return_value=[mapped],
+        ),
+        patch(
+            "optimizer.management.commands.optimize_indexes.create_index_sql",
+            return_value='CREATE INDEX CONCURRENTLY "example";',
+        ),
+    ):
+        Command().handle(format="text")
+
+    output = capsys.readouterr().out
+    assert "Django model: library.Book" in output
+    assert "Django fields: author" in output
+    assert 'Django suggestion: models.Index(fields=["author"])' in output
+
+
+def test_handle_explains_unmapped_table(capsys, recommendation):
+    unmapped = replace(recommendation, model_mapping="unmapped_table")
+    with (
+        patch(
+            "optimizer.management.commands.optimize_indexes.get_frequent_queries",
+            return_value=[],
+        ),
+        patch(
+            "optimizer.management.commands.optimize_indexes.extract_query_patterns",
+            return_value=[],
+        ),
+        patch(
+            "optimizer.management.commands.optimize_indexes.recommend_indexes",
+            return_value=[unmapped],
+        ),
+        patch(
+            "optimizer.management.commands.optimize_indexes.create_index_sql",
+            return_value='CREATE INDEX CONCURRENTLY "example";',
+        ),
+    ):
+        Command().handle(format="text")
+
+    assert "Django mapping: no managed Django model found" in capsys.readouterr().out
 
 
 def test_handle_uses_selected_database_alias():
