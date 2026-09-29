@@ -6,7 +6,7 @@ import pytest
 from django.core.management.base import CommandError
 
 from optimizer.management.commands.optimize_indexes import Command
-from optimizer.types import IndexRecommendation
+from optimizer.types import IndexRecommendation, RecommendationScore, TableStatistics
 
 
 @pytest.fixture(autouse=True)
@@ -154,6 +154,8 @@ def test_handle_outputs_versioned_machine_readable_json(capsys, recommendation):
                 "django_fields": [],
                 "django_field_kinds": [],
                 "django_index": None,
+                "table_statistics": None,
+                "score": None,
                 "create_sql": 'CREATE INDEX CONCURRENTLY "example";',
             }
         ],
@@ -246,6 +248,55 @@ def test_handle_outputs_django_model_and_index_suggestion(capsys, recommendation
     assert "Django model: library.Book" in output
     assert "Django fields: author" in output
     assert 'Django suggestion: models.Index(fields=["author"])' in output
+
+
+def test_handle_outputs_score_and_table_evidence(capsys, recommendation):
+    scored = replace(
+        recommendation,
+        table_statistics=TableStatistics(
+            estimated_rows=100_000,
+            table_bytes=10_485_760,
+            sequential_scans=500,
+            index_scans=20,
+            inserts=10,
+            updates=20,
+            deletes=5,
+        ),
+        score=RecommendationScore(
+            total=55,
+            workload=30,
+            table_impact=10,
+            read_pressure=15,
+            write_penalty=0,
+            decision="recommend",
+            reasons=("Evidence-based candidate.",),
+        ),
+    )
+    with (
+        patch(
+            "optimizer.management.commands.optimize_indexes.get_frequent_queries",
+            return_value=[],
+        ),
+        patch(
+            "optimizer.management.commands.optimize_indexes.extract_query_patterns",
+            return_value=[],
+        ),
+        patch(
+            "optimizer.management.commands.optimize_indexes.recommend_indexes",
+            return_value=[scored],
+        ),
+        patch(
+            "optimizer.management.commands.optimize_indexes.create_index_sql",
+            return_value='CREATE INDEX CONCURRENTLY "example";',
+        ),
+    ):
+        Command().handle(format="text")
+
+    output = capsys.readouterr().out
+    assert "Score: 55/100" in output
+    assert "workload 30, table 10, reads 15, write penalty 0" in output
+    assert "100000 estimated rows" in output
+    assert "500 sequential scans, 35 writes" in output
 
 
 def test_handle_explains_unmapped_table(capsys, recommendation):
