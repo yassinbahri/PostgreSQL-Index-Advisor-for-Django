@@ -1,14 +1,28 @@
 from unittest.mock import patch
 
+import pytest
+
 from optimizer.model_mapping import DjangoFieldReference, DjangoModelReference
 from optimizer.recommender import _index_name, recommend_indexes
-from optimizer.types import QueryPattern
+from optimizer.types import QueryPattern, TableStatistics
 
 
-def pattern(*, calls=5, total_exec_time=100.0, columns=("author_id",)):
+@pytest.fixture(autouse=True)
+def no_table_statistics():
+    with patch("optimizer.recommender.load_table_statistics", return_value={}):
+        yield
+
+
+def pattern(
+    *,
+    calls=5,
+    total_exec_time=100.0,
+    columns=("author_id",),
+    table="books_book",
+):
     return QueryPattern(
         schema="public",
-        table="books_book",
+        table=table,
         columns=columns,
         calls=calls,
         total_exec_time=total_exec_time,
@@ -64,6 +78,66 @@ def test_recommend_indexes_reports_unmapped_table_without_guessing():
     assert recommendation.django_model is None
     assert recommendation.django_fields == ()
     assert recommendation.django_index is None
+
+
+def test_recommend_indexes_suppresses_tiny_table(no_table_statistics):
+    tiny = TableStatistics(
+        estimated_rows=100,
+        table_bytes=64 * 1024,
+        sequential_scans=500,
+        index_scans=0,
+        inserts=0,
+        updates=0,
+        deletes=0,
+    )
+    with (
+        patch("optimizer.recommender._load_existing_indexes", return_value={}),
+        patch(
+            "optimizer.recommender.load_table_statistics",
+            return_value={("public", "books_book"): tiny},
+        ),
+    ):
+        assert recommend_indexes([pattern(calls=1_000)]) == []
+
+
+def test_recommend_indexes_ranks_by_explainable_score(no_table_statistics):
+    large = TableStatistics(
+        estimated_rows=1_000_000,
+        table_bytes=1024**3,
+        sequential_scans=5_000,
+        index_scans=100,
+        inserts=10,
+        updates=10,
+        deletes=0,
+    )
+    small = TableStatistics(
+        estimated_rows=1_000,
+        table_bytes=1024**2,
+        sequential_scans=10,
+        index_scans=1,
+        inserts=0,
+        updates=0,
+        deletes=0,
+    )
+    patterns = [
+        pattern(table="small_book", total_exec_time=2_000),
+        pattern(table="large_book", total_exec_time=1_000),
+    ]
+    with (
+        patch("optimizer.recommender._load_existing_indexes", return_value={}),
+        patch(
+            "optimizer.recommender.load_table_statistics",
+            return_value={
+                ("public", "large_book"): large,
+                ("public", "small_book"): small,
+            },
+        ),
+    ):
+        recommendations = recommend_indexes(patterns)
+
+    assert [item.table for item in recommendations] == ["large_book", "small_book"]
+    assert recommendations[0].score.total > recommendations[1].score.total
+    assert recommendations[0].table_statistics == large
 
 
 def test_recommend_indexes_excludes_frequencies_below_threshold():

@@ -4,11 +4,14 @@ import json
 from django.db import connections
 
 from optimizer.model_mapping import match_model
+from optimizer.scoring import score_candidate
+from optimizer.table_statistics import load_table_statistics
 from optimizer.types import IndexRecommendation
 
 
 def recommend_indexes(patterns, min_calls=5, using="default", model_map=None):
     existing_indexes = _load_existing_indexes(patterns, using=using)
+    table_statistics = load_table_statistics(patterns, using=using)
     recommendations = []
     for pattern in patterns:
         if pattern.calls < min_calls:
@@ -26,6 +29,10 @@ def recommend_indexes(patterns, min_calls=5, using="default", model_map=None):
             if model_match is not None and model_match.status == "matched"
             else ()
         )
+        statistics = table_statistics.get((pattern.schema, pattern.table))
+        score = score_candidate(pattern, statistics)
+        if score.decision == "suppress":
+            continue
         recommendations.append(
             IndexRecommendation(
                 schema=pattern.schema,
@@ -60,9 +67,20 @@ def recommend_indexes(patterns, min_calls=5, using="default", model_map=None):
                     if django_fields
                     else None
                 ),
+                table_statistics=statistics,
+                score=score,
             )
         )
-    return recommendations
+    return sorted(
+        recommendations,
+        key=lambda recommendation: (
+            -recommendation.score.total,
+            -recommendation.total_exec_time,
+            recommendation.schema,
+            recommendation.table,
+            recommendation.columns,
+        ),
+    )
 
 
 def _load_existing_indexes(patterns, using="default"):
