@@ -26,7 +26,7 @@ The project is distributed on PyPI as `django-index-optimizer` and installed as
 the Django app `optimizer`. Those technical names remain stable for existing
 users.
 
-Version `0.2.0` is preview-only: it produces evidence and safely quoted SQL for
+Version `0.2.1` is preview-only: it produces evidence and safely quoted SQL for
 review but never changes the database.
 
 ## How it works
@@ -52,9 +52,10 @@ The `0.2.0` workflow:
 1. collects slow or frequently executed PostgreSQL statements;
 2. parses PostgreSQL filter predicates into schema, table, and column evidence;
 3. ignores recommendations already covered by an index prefix;
-4. explains the evidence behind each candidate;
-5. generates reviewable, safely quoted SQL;
-6. never changes the database.
+4. maps database tables and columns back to managed Django models and fields;
+5. explains the evidence behind each candidate;
+6. generates both a Django `models.Index` suggestion and safely quoted SQL;
+7. never changes the database.
 
 Correctness and database safety take priority over generating a large number
 of suggestions.
@@ -101,6 +102,20 @@ total execution time, the reason it was selected, and safely quoted
 `CREATE INDEX CONCURRENTLY` SQL. The SQL is printed for review and is never
 executed.
 
+When a table belongs to one managed Django model, the report also includes a
+reviewable model suggestion:
+
+```text
+Django model: library.Book
+Django fields: author
+Django suggestion: models.Index(fields=["author"])
+```
+
+Database columns such as `author_id` and custom `db_column` values are mapped
+back to their Django field names. Schema-qualified `db_table` values are
+supported. Unmanaged, missing, or ambiguous model mappings are reported
+explicitly and never guessed.
+
 For CI, scripts, or a review artifact:
 
 ```console
@@ -134,6 +149,8 @@ using a SQL preview.
 - Only filter predicates that can be mapped unambiguously to one table are
   considered.
 - Recommendations are currently single-column B-tree candidates.
+- Django suggestions are review artifacts and are never inserted into model or
+  migration files automatically.
 - PostgreSQL system catalogs and the advisor's own queries are ignored.
 - Planner validation, write-overhead scoring, joins, ordering, partial indexes,
   and multi-column candidates are planned rather than guessed prematurely.
