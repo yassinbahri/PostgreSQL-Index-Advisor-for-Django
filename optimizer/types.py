@@ -38,6 +38,17 @@ class TableStatistics:
 
 
 @dataclass(frozen=True)
+class RecommendationScore:
+    total: int
+    workload: int
+    table_impact: int
+    read_pressure: int
+    write_penalty: int
+    decision: str
+    reasons: tuple[str, ...]
+
+
+@dataclass(frozen=True)
 class IndexRecommendation:
     schema: str
     table: str
@@ -54,6 +65,7 @@ class IndexRecommendation:
     django_field_kinds: tuple[str, ...] = ()
     django_index: str | None = None
     table_statistics: TableStatistics | None = None
+    score: RecommendationScore | None = None
 
     def as_dict(self):
         return asdict(self)
