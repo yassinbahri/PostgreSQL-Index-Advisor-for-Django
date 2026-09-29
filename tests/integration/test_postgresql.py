@@ -16,6 +16,7 @@ def test_workload_recommendation_and_existing_index_suppression():
     from django.db import connection
 
     from optimizer.analyzer import extract_query_patterns, get_frequent_queries
+    from optimizer.model_mapping import build_model_map
     from optimizer.recommender import recommend_indexes
 
     django.setup()
@@ -47,7 +48,11 @@ def test_workload_recommendation_and_existing_index_suppression():
             )
 
     patterns = extract_query_patterns(get_frequent_queries(limit=50))
-    recommendations = recommend_indexes(patterns, min_calls=5)
+    recommendations = recommend_indexes(
+        patterns,
+        min_calls=5,
+        model_map=build_model_map(),
+    )
     matching = [
         item
         for item in recommendations
@@ -55,6 +60,11 @@ def test_workload_recommendation_and_existing_index_suppression():
     ]
     assert len(matching) == 1
     assert matching[0].calls == 10
+    assert matching[0].model_mapping == "matched"
+    assert matching[0].django_model == "optimizer_integration.IntegrationBook"
+    assert matching[0].django_fields == ("author",)
+    assert matching[0].django_field_kinds == ("relation",)
+    assert matching[0].django_index == 'models.Index(fields=["author"])'
 
     with connection.cursor() as cursor:
         cursor.execute(
@@ -64,5 +74,9 @@ def test_workload_recommendation_and_existing_index_suppression():
             """
         )
 
-    recommendations = recommend_indexes(patterns, min_calls=5)
+    recommendations = recommend_indexes(
+        patterns,
+        min_calls=5,
+        model_map=build_model_map(),
+    )
     assert not any(item.table == "dio_integration_book" for item in recommendations)
